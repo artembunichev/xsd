@@ -6,7 +6,7 @@ dep: libxfixes*/
 #include<X11/extensions/Xfixes.h>
 #include<signal.h>
 #include<stdlib.h>
-#include<stdio.h>
+#include<unistd.h>
 static Atom CLP;//clipboard atom
 static Atom UTF;//for utf8 format
 static Atom STR;//for string format
@@ -50,7 +50,7 @@ XSelectionRequestEvent* srev;//selection request event
 int evbs,erbs;//event base and error base for xfixes.
 Window rt;
 dpl=XOpenDisplay(NULL);
-if(dpl==NULL){dprintf(2,"can't open display.\n");return 1;};
+if(dpl==NULL){write(2,"can't open display.\n",20);return 1;};
 rt=DefaultRootWindow(dpl);
 w=XCreateSimpleWindow(dpl,rt,0,0,1,1,0,0,0);
 CLP=XInternAtom(dpl,"CLIPBOARD",False);
@@ -88,7 +88,7 @@ else if(ev.type==SelectionNotify){//response to our request to read the selectio
 	selection data to utf8 format hence our property we asked him to put the
 	resulting data in is empty*/
 	if(snev->property==None){
-	dprintf(2,"can't convert selection.\n");return 1;
+	write(2,"can't convert selection.\n",25);return 1;
 	}
 	else//selection ownew has successfully put clipboard selection data into our windows property
 	{
