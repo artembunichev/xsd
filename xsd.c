@@ -43,7 +43,6 @@ main()
 they do not carry any valuable information*/
 int di;Atom tp,da;
 unsigned long sz,dul;//selection data size(length)
-Atom tgts[]={UTF,XSTR,STR,TXT};//all the selection formats we'll support
 XEvent ev;
 XFixesSelectionNotifyEvent* fsnev;//xfixes selection notify event
 XSelectionRequestEvent* srev;//selection request event
@@ -108,6 +107,7 @@ else if(ev.type==SelectionRequest){
 	}
 	if(srev->target==TGT)
 	{
+		Atom tgts[]={UTF,XSTR,STR,TXT};//all the selection formats we'll support
 		/*lovely put targets in requestor's window property for him to chose one
 		and perform a next request asking us to convert selection to the format he has chosen*/
 		XChangeProperty(srev->display,srev->requestor,srev->property,srev->target,
