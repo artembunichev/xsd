@@ -59,25 +59,33 @@ XSTR=XInternAtom(dpl,"XA_STRING",False);
 TXT=XInternAtom(dpl,"TEXT",False);
 TGT=XInternAtom(dpl,"TARGETS",False);
 SEL=XInternAtom(dpl,"SEL",False);
+/*plug XFixes extension in, obtain event base and event error codes which are used
+to determine if XEvent is exactly XFixes event but not regular one.*/
 XFixesQueryExtension(dpl,&evbs,&erbs);
+/*XFixes provides handy and useful events that notify us when selection owner has been
+changed or has died. subscribe to them in order to receive them.*/
 XFixesSelectSelectionInput(dpl,rt,CLP,
 XFixesSetSelectionOwnerNotifyMask|XFixesSelectionClientCloseNotifyMask
 |XFixesSelectionWindowDestroyNotifyMask);
-while(1){
+while(1){//window main loop
 XNextEvent(dpl,&ev);
 if(ev.type-evbs==XFixesSelectionNotify){
 	fsnev=(XFixesSelectionNotifyEvent*)(&ev);
 	switch(fsnev->subtype){
+	/*new selection owner came in, so we need to nab the selection from it and save
+	it into "sel" variable*/
 	case XFixesSetSelectionOwnerNotify:{
-	//nab clipboard selection and save it in case owner died
-	//request selection from window owns it right now in UTF format
+	/*request selection from window owns it right now in UTF format.*/
 	XConvertSelection(dpl,CLP,UTF,SEL,w,CurrentTime);
+	/*this scenario continues goes into SelectionNotify event branch*/
 	break;
 	}
+	/*if original selection owner dies*/
 	case XFixesSelectionWindowDestroyNotify:
 	case XFixesSelectionClientCloseNotify:{
-	do{XSetSelectionOwner(dpl,CLP,w,CurrentTime);}
-	while(XGetSelectionOwner(dpl,CLP)!=w);
+	do{XSetSelectionOwner(dpl,CLP,w,CurrentTime);}//make our window a selection owner
+	while(XGetSelectionOwner(dpl,CLP)!=w);//ensure we've become a selection owner successfully
+	/*this scenario goes into SelectionRequest event branch*/
 	}
 	}
 }
@@ -89,16 +97,17 @@ else if(ev.type==SelectionNotify){//response to our request to read the selectio
 	if(snev->property==None){
 	write(2,"can't convert selection.\n",25);return 1;
 	}
-	else//selection ownew has successfully put clipboard selection data into our windows property
+	else//selection owner has successfully put clipboard selection data into our windows property
 	{
 	/*make this request in order to obtain data size*/
 	XGetWindowProperty(dpl,w,SEL,0,0,False,AnyPropertyType,&tp,&di,&dul,
-&sz, &sel);
+&sz,&sel);
 	/*use data size has just been figured out to finally get selection data into sel variable*/
 	XGetWindowProperty(dpl,w,SEL,0,sz,False,AnyPropertyType,&da,
 &di,&dul,&dul,&sel);
 	}
 }
+/*handle a request asking for selection ('cause and as long as we're selection owner)*/
 else if(ev.type==SelectionRequest){
 	srev=(XSelectionRequestEvent*)(&ev);
 	if(srev->property==None)
@@ -117,7 +126,8 @@ else if(ev.type==SelectionRequest){
 	else if((srev->target==STR)||(srev->target==XSTR)
 	||(srev->target==UTF)||(srev->target==TXT))
 	{
-		XChangeProperty(srev->display,srev->requestor,srev->property,srev->target,8,PropModeReplace,sel,sz);
+		XChangeProperty(srev->display,srev->requestor,srev->property,srev->target,8,
+		PropModeReplace,sel,sz);
 		selntf(srev,srev->property);
 	}
 	else
