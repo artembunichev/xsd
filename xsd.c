@@ -95,7 +95,9 @@ else if(ev.type==SelectionNotify){//response to our request to read the selectio
 	selection data to utf8 format hence our property we asked him to put the
 	resulting data in is empty*/
 	if(snev->property==None){
-	write(2,"can't convert selection.\n",25);return 1;
+		/* in case of non-text selection, after death of the original owner,
+		   we'll serve the very last *text* selection was grabbed. */
+		continue;
 	}
 	else//selection owner has successfully put clipboard selection data into our windows property
 	{
